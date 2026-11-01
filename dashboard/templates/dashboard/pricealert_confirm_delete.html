@@ -1,0 +1,14 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+<title>Удалить оповещение</title>
+{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    <p>Удалить оповещение для "{{ object.share.ticker }}" (цель {{ object.target_price }})?</p>
+    <button class="btn btn-danger" type="submit">Удалить</button>
+    <a href="{% url 'dashboard:alerts' %}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}

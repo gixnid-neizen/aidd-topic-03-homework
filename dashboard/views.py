@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, View, UpdateView
 
-from .forms import ShareModelForm
-from .models import Share
+from .forms import ShareModelForm, PriceAlertForm
+from .models import Share, Watchlist, PriceAlert
 from .services.graph import get_graph
 from django.contrib.auth.mixins import UserPassesTestMixin
 
@@ -61,3 +61,72 @@ class ShareDeleteView(IsUserAuthenticatedMixin, DeleteView):
     model = Share
     template_name = "dashboard/delete.html"
     success_url = reverse_lazy("dashboard:index")
+
+class WatchlistListView(IsUserAuthenticatedMixin, ListView):
+    """Список наблюдения пользователя"""
+
+    model = Watchlist
+    template_name = "dashboard/watchlist_list.html"
+    context_object_name = "watchlist"
+
+    def get_queryset(self):
+        return Watchlist.objects.filter(user=self.request.user).select_related(
+            "share"
+        )
+
+
+class WatchlistAddView(IsUserAuthenticatedMixin, View):
+    """Добавить акцию в список наблюдения"""
+
+    def post(self, request, pk):
+        share = get_object_or_404(Share, id=pk)
+        Watchlist.objects.get_or_create(user=request.user, share=share)
+        return redirect("dashboard:watchlist")
+
+
+class WatchlistRemoveView(IsUserAuthenticatedMixin, DeleteView):
+    """Удалить акцию из списка наблюдения"""
+
+    model = Watchlist
+    template_name = "dashboard/watchlist_confirm_delete.html"
+    success_url = reverse_lazy("dashboard:watchlist")
+
+    def get_queryset(self):
+        return Watchlist.objects.filter(user=self.request.user)
+
+
+class PriceAlertListView(IsUserAuthenticatedMixin, ListView):
+    """Список оповещений о целевой цене"""
+
+    model = PriceAlert
+    template_name = "dashboard/pricealert_list.html"
+    context_object_name = "alerts"
+
+    def get_queryset(self):
+        return PriceAlert.objects.filter(user=self.request.user).select_related(
+            "share"
+        )
+
+
+class PriceAlertCreateView(IsUserAuthenticatedMixin, CreateView):
+    """Создать оповещение о целевой цене"""
+
+    model = PriceAlert
+    form_class = PriceAlertForm
+    template_name = "dashboard/pricealert_form.html"
+    success_url = reverse_lazy("dashboard:alerts")
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+
+class PriceAlertDeleteView(IsUserAuthenticatedMixin, DeleteView):
+    """Удалить оповещение о целевой цене"""
+
+    model = PriceAlert
+    template_name = "dashboard/pricealert_confirm_delete.html"
+    success_url = reverse_lazy("dashboard:alerts")
+
+    def get_queryset(self):
+        return PriceAlert.objects.filter(user=self.request.user)

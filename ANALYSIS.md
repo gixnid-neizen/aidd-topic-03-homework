@@ -182,3 +182,21 @@ Celery-задача периодически обновляет last_price и is
 5. Миграция 0004_add_last_price.py содержит опечатку verbose_name="Ти" для ticker (стр. 37) и некорректный verbose_name="Валюта" для name (стр. 32).
 6. dashboard/tests.py использует APITestCase и реальные URL API; тесты HTML-страниц отсутствуют.
 
+## Новая функциональность (задание 4)
+
+Реализован персональный мониторинг акций:
+
+- **Watchlist** — персональный список наблюдения пользователя за акциями (модель `Watchlist`, связь пользователь→акция, уникальная пара). Пользователь может добавлять акцию в наблюдение со страницы списка и убирать её. Доступно только авторизованным пользователям.
+- **PriceAlert** — оповещение о достижении целевой цены (модель `PriceAlert`: пользователь, акция, целевая цена, флаг «сработало», даты создания и срабатывания). Пользователь может создавать и удалять оповещения.
+
+Изменения в коде:
+- `dashboard/models.py` — модели `Watchlist` и `PriceAlert`
+- `dashboard/forms.py` — форма `PriceAlertForm`
+- `dashboard/views.py` — представления `WatchlistListView`, `WatchlistAddView`, `WatchlistRemoveView`, `PriceAlertListView`, `PriceAlertCreateView`, `PriceAlertDeleteView`
+- `dashboard/urls.py` — маршруты `/watchlist/`, `/watchlist/add/<pk>/`, `/watchlist/remove/<pk>/`, `/alerts/`, `/alerts/create/`, `/alerts/delete/<pk>/`
+- `dashboard/admin.py` — регистрация `Watchlist` и `PriceAlert` в админке
+- `dashboard/migrations/0008_pricealert_watchlist.py` — одна миграция
+- 5 новых шаблонов; `base.html` и `list.html` дополнены навигацией и кнопкой «В наблюдение»
+
+Поведение существующих задач сохранено: все 10 существующих тестов проходят, главная страница и API возвращают 200.
+

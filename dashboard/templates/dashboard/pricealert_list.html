@@ -1,0 +1,46 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+<title>Оповещения о цене</title>
+{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+    <h2>Оповещения о целевой цене</h2>
+    <a href="{% url 'dashboard:alerts_create' %}" class="btn btn-primary">Создать оповещение</a>
+    <a href="{% url 'dashboard:index' %}" class="btn btn-outline-secondary">К списку акций</a>
+    {% if alerts %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Тикер</th>
+                    <th scope="col">Целевая цена</th>
+                    <th scope="col">Сработало</th>
+                    <th scope="col">Создано</th>
+                    <th scope="col">Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for alert in alerts %}
+                <tr>
+                    <td>{{ alert.share.ticker }}</td>
+                    <td>{{ alert.target_price }}</td>
+                    <td>{{ alert.triggered|yesno:"Да,Нет" }}</td>
+                    <td>{{ alert.created_at }}</td>
+                    <td>
+                        <form method="post" action="{% url 'dashboard:alerts_delete' alert.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-danger">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Оповещений нет.</p>
+    {% endif %}
+{% else %}
+    <p>Войдите, чтобы использовать оповещения.</p>
+{% endif %}
+{% endblock %}

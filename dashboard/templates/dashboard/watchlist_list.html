@@ -1,0 +1,45 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}
+<title>Список наблюдения</title>
+{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+    <h2>Мой список наблюдения</h2>
+    <a href="{% url 'dashboard:index' %}" class="btn btn-outline-secondary">К списку акций</a>
+    {% if watchlist %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Тикер</th>
+                    <th scope="col">Название</th>
+                    <th scope="col">Цена</th>
+                    <th scope="col">Валюта</th>
+                    <th scope="col">Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in watchlist %}
+                <tr>
+                    <td>{{ item.share.ticker }}</td>
+                    <td>{{ item.share.name }}</td>
+                    <td>{{ item.share.last_price|default:"-" }}</td>
+                    <td>{{ item.share.currency }}</td>
+                    <td>
+                        <form method="post" action="{% url 'dashboard:watchlist_remove' item.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-danger">Убрать</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Список наблюдения пуст. Добавьте акции со страницы списка.</p>
+    {% endif %}
+{% else %}
+    <p>Войдите, чтобы использовать список наблюдения.</p>
+{% endif %}
+{% endblock %}

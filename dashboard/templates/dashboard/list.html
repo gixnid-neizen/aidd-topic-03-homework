@@ -49,6 +49,10 @@
                             <a href="{% url 'dashboard:delete' share.id %}" class="btn btn-danger">
                                 Удалить
                             </a>
+                            <form method="post" action="{% url 'dashboard:watchlist_add' share.id %}" style="display:inline">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-primary">В наблюдение</button>
+                            </form>
                         </td>
                     {% endif %}
 
