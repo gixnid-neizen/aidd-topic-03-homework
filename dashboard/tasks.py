@@ -10,7 +10,10 @@ def update_last_price():
 
     for share in shares:
         try:
-            [last_price, detetime] = get_last_data(share)
+            data = get_last_data(share)
+            if data is None:
+                continue
+            last_price, detetime = data
 
             try:
                 if share.last_price > last_price:

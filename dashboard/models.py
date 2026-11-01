@@ -16,6 +16,9 @@ class Share(models.Model):
     )
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
+    def __str__(self):
+        return f"{self.ticker} ({self.name})"
+
     class Meta:
         verbose_name = "Акция"
         verbose_name_plural = "Акции"
