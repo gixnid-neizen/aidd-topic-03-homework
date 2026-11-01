@@ -109,3 +109,76 @@ URL → View:
 
 Работа с БД: через Django ORM (Share.objects.all(), .get(id=pk), .filter().update()). Подключение к PostgreSQL (config/settings.py, стр. 96–103). Миграции в dashboard/migrations/.
 
+---
+
+## Функциональные требования (задание 2)
+
+Восстановлены на основе реально реализованного кода. Каждое требование ссылается на файл и функцию/класс.
+
+### FR-1. Просмотр списка акций
+Пользователь (включая неавторизованного) открывает главную страницу и видит пагинированный список акций с тикером, названием, ISIN, текущей ценой и валютой.
+Подтверждение: dashboard/views.py ShareListView (стр. 20–26), dashboard/urls.py (стр. 14), шаблон dashboard/templates/dashboard/list.html (стр. 15–85).
+
+### FR-2. Просмотр детальной информации об акции с графиком
+Пользователь переходит на страницу акции и видит название, цену, валюту, время обновления и исторический график.
+Подтверждение: dashboard/views.py ShareDetailView.get (стр. 29–38), dashboard/services/graph.py get_graph (стр. 11–35), шаблон detail.html.
+
+### FR-3. Создание акции (только авторизованный)
+Авторизованный пользователь заполняет форму и создаёт новую акцию.
+Подтверждение: dashboard/views.py ShareCreateView (стр. 41–46), IsUserAuthenticatedMixin (стр. 11–17), dashboard/forms.py ShareModelForm (стр. 6–11), шаблон create.html.
+
+### FR-4. Редактирование акции (только авторизованный)
+Авторизованный пользователь редактирует существующую акцию.
+Подтверждение: dashboard/views.py ShareUpdateView (стр. 49–55).
+
+### FR-5. Удаление акции (только авторизованный)
+Авторизованный пользователь подтверждает удаление акции.
+Подтверждение: dashboard/views.py ShareDeleteView (стр. 58–63), шаблон delete.html.
+
+### FR-6. Регистрация пользователя
+Пользователь регистрируется по e-mail и паролю (с подтверждением пароля), после чего автоматически авторизуется.
+Подтверждение: user/views.py RegistrationView (стр. 36–55), user/forms.py RegistrationForm (стр. 8–53), user/urls.py (стр. 9).
+
+### FR-7. Авторизация пользователя
+Пользователь входит по e-mail и паролю и перенаправляется на главную.
+Подтверждение: user/views.py AuthView (стр. 8–33), user/forms.py AuthForm (стр. 56–70), user/urls.py (стр. 8).
+
+### FR-8. Выход пользователя
+Авторизованный пользователь может выйти из системы.
+Подтверждение: user/views.py LogoutView (стр. 58–64), user/urls.py (стр. 10).
+
+### FR-9. REST API: получение списка акций
+GET /api/v1/shares/ возвращает пагинированный список акций.
+Подтверждение: dashboard/api/v1/views.py ShareViewSet (стр. 16–20), dashboard/api/v1/router.py (стр. 5–6).
+
+### FR-10. REST API: получение, создание, обновление, удаление одной акции
+GET/PUT/DELETE /api/v1/shares/<id>/ поддерживают CRUD над отдельной акцией.
+Подтверждение: dashboard/api/v1/views.py ShareViewSet (ModelViewSet).
+
+### FR-11. REST API: фильтрация и поиск
+Акции можно фильтровать по name, ticker, искать по имени, сортировать по name, ticker.
+Подтверждение: dashboard/api/v1/views.py ShareFilter (стр. 10–13), filter_backends, ordering_fields, search_fields (стр. 16–21).
+
+### FR-12. Фоновое обновление цен
+Celery-задача периодически обновляет last_price и is_trend_high для всех акций через Tinkoff API.
+Подтверждение: dashboard/tasks.py update_last_price (стр. 7–28), config/celery.py beat_schedule (стр. 13–17), dashboard/services/market_data.py get_last_data (стр. 6–10).
+
+### FR-13. Защита создания/редактирования/удаления акций от неавторизованного доступа
+Создание, редактирование и удаление акций доступны только авторизованным пользователям.
+Подтверждение: dashboard/views.py IsUserAuthenticatedMixin.test_func (стр. 12–13), применяется в ShareCreateView/ShareUpdateView/ShareDeleteView.
+
+### Бизнес-правила и ограничения
+- figi и ticker уникальны (dashboard/migrations/0002_update_share.py).
+- uid уникален (dashboard/migrations/0003_add_uuid.py).
+- Пароли при регистрации должны совпадать; e-mail не должен дублироваться (user/forms.py RegistrationForm.clean, стр. 30–46).
+- CSRF-токен обязателен в формах ({% csrf_token %} во всех шаблонах форм).
+- SECRET_KEY = "" — пустой ключ в config/settings.py (стр. 6), что мешает работе Django в современных версиях.
+
+### Неоднозначности и возможные дефекты (не являются требованиями)
+1. ShareDetailView.get использует Share.objects.get(id=pk) — при отсутствии акции вернётся 500 вместо 404 (dashboard/views.py, стр. 32).
+2. list.html имеет непарные теги <td> при отрисовке цвета цены (стр. 35–40), нарушена вёрстка.
+3. Внешний API Tinkoff требует токена (TINKOFF_TOKEN = "", settings.py стр. 134) — детальная страница и задачи упадут без токена.
+4. База данных настроена на PostgreSQL, который может не быть доступен в среде запуска.
+5. Миграция 0004_add_last_price.py содержит опечатку verbose_name="Ти" для ticker (стр. 37) и некорректный verbose_name="Валюта" для name (стр. 32).
+6. dashboard/tests.py использует APITestCase и реальные URL API; тесты HTML-страниц отсутствуют.
+
