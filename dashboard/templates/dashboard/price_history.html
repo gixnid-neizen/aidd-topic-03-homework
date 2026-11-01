@@ -1,0 +1,35 @@
+{% extends "dashboard/base.html" %}
+{% block title %}<title>История цены {{ share.ticker }}</title>{% endblock %}
+{% block content %}
+<h1>История цены: {{ share.ticker }}</h1>
+<form method="get" class="form-inline mb-3">
+    <label for="days">Период:</label>
+    <select id="days" name="days" class="form-control mx-2">
+        <option value="7" {% if days == 7 %}selected{% endif %}>7 дней</option>
+        <option value="30" {% if days == 30 %}selected{% endif %}>30 дней</option>
+        <option value="90" {% if days == 90 %}selected{% endif %}>90 дней</option>
+        <option value="180" {% if days == 180 %}selected{% endif %}>180 дней</option>
+        <option value="365" {% if days == 365 %}selected{% endif %}>365 дней</option>
+    </select>
+    <button class="btn btn-secondary" type="submit">Показать</button>
+</form>
+<dl>
+    <dt>Первая цена периода</dt><dd>{{ first_price|default_if_none:"—" }}</dd>
+    <dt>Последняя цена периода</dt><dd>{{ last_price|default_if_none:"—" }}</dd>
+    <dt>Абсолютное изменение</dt><dd>{{ absolute_change|default_if_none:"—" }}</dd>
+    <dt>Изменение, %</dt><dd>{{ percentage_change|floatformat:2|default_if_none:"—" }}</dd>
+</dl>
+{% if entries %}
+    {% autoescape off %}{{ plot_div }}{% endautoescape %}
+{% else %}
+    <p>За выбранный период сохранённых цен нет. История пополняется при успешном обновлении рыночных данных.</p>
+{% endif %}
+<table class="table">
+    <thead><tr><th>Время</th><th>Цена</th></tr></thead>
+    <tbody>
+    {% for entry in entries %}
+        <tr><td>{{ entry.captured_at }}</td><td>{{ entry.price }}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

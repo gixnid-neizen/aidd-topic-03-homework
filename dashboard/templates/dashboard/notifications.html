@@ -1,0 +1,21 @@
+{% extends "dashboard/base.html" %}
+{% block title %}<title>Уведомления</title>{% endblock %}
+{% block content %}
+<h1>Уведомления о целевых ценах</h1>
+<table class="table">
+    <thead><tr><th>Время</th><th>Список</th><th>Акция</th><th>Целевая цена</th><th>Рыночная цена</th></tr></thead>
+    <tbody>
+    {% for notification in notifications %}
+        <tr>
+            <td>{{ notification.triggered_at }}</td>
+            <td>{{ notification.item.watchlist.name }}</td>
+            <td>{{ notification.item.share.ticker }}</td>
+            <td>{{ notification.item.target_price }}</td>
+            <td>{{ notification.price }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="5">Уведомлений пока нет.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

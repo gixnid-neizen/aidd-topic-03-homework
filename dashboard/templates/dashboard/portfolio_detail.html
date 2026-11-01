@@ -1,0 +1,46 @@
+{% extends "dashboard/base.html" %}
+{% block title %}<title>{{ portfolio.name }}</title>{% endblock %}
+{% block content %}
+<h1>{{ portfolio.name }}</h1>
+<h2>Показатели</h2>
+<dl>
+    <dt>Текущая стоимость</dt><dd>{{ summary.current_value }}</dd>
+    <dt>Стоимость оставшихся позиций по средней цене покупки</dt><dd>{{ summary.invested_value }}</dd>
+    <dt>Нереализованный P/L</dt><dd>{{ summary.unrealized_profit }}</dd>
+    <dt>Реализованный P/L</dt><dd>{{ summary.realized_profit }}</dd>
+    <dt>Общий P/L</dt><dd>{{ summary.total_profit }}</dd>
+</dl>
+<h2>Позиции</h2>
+<table class="table">
+    <thead><tr><th>Тикер</th><th>Количество</th><th>Средняя цена</th><th>Текущая цена</th><th>Стоимость</th></tr></thead>
+    <tbody>
+    {% for holding in summary.holdings %}
+        <tr>
+            <td>{{ holding.share.ticker }}</td><td>{{ holding.quantity }}</td>
+            <td>{{ holding.average_price }}</td><td>{{ holding.current_price|default:"—" }}</td>
+            <td>{{ holding.current_value|default:"—" }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="5">Открытых позиций пока нет.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+<h2>Смоделировать сделку</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Записать сделку</button>
+</form>
+<h2>История операций</h2>
+<table class="table">
+    <thead><tr><th>Время</th><th>Акция</th><th>Операция</th><th>Количество</th><th>Цена</th></tr></thead>
+    <tbody>
+    {% for trade in trades %}
+        <tr><td>{{ trade.executed_at }}</td><td>{{ trade.share.ticker }}</td>
+            <td>{{ trade.get_side_display }}</td><td>{{ trade.quantity }}</td><td>{{ trade.price }}</td></tr>
+    {% empty %}
+        <tr><td colspan="5">Операций пока нет.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

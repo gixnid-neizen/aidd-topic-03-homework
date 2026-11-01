@@ -1,0 +1,47 @@
+{% extends "dashboard/base.html" %}
+{% block title %}<title>Симулятор стратегий</title>{% endblock %}
+{% block content %}
+<h1>Симулятор инвестиционных стратегий</h1>
+<p>Покупка выполняется при цене не выше buy threshold; продажа всех виртуальных акций — при цене не ниже sell threshold.</p>
+<form method="post" class="mb-4">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Создать стратегию</button>
+</form>
+{% for result in strategies %}
+    {% with strategy=result.strategy summary=result.summary %}
+    <section class="mb-4">
+        <h2>{{ strategy.name }} — {{ strategy.share.ticker }}</h2>
+        <p>Покупать ≤ {{ strategy.buy_below|default_if_none:"—" }};
+            продавать ≥ {{ strategy.sell_above|default_if_none:"—" }};
+            количество покупки: {{ strategy.quantity }};
+            {% if strategy.is_active %}активна{% else %}приостановлена{% endif %}</p>
+        <p>Текущая позиция: {{ summary.quantity }};
+            текущая стоимость: {{ summary.current_value|default_if_none:"—" }};
+            реализованный P/L: {{ summary.realized_profit }};
+            нереализованный P/L: {{ summary.unrealized_profit }};
+            общий P/L: {{ summary.total_profit }}</p>
+        <form method="post" action="{% url 'dashboard:strategy-toggle' strategy.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-secondary" type="submit">
+                {% if strategy.is_active %}Приостановить{% else %}Активировать{% endif %}
+            </button>
+        </form>
+        <h3>Виртуальные операции</h3>
+        <table class="table">
+            <thead><tr><th>Время</th><th>Операция</th><th>Количество</th><th>Цена</th></tr></thead>
+            <tbody>
+            {% for trade in strategy.trades.all %}
+                <tr><td>{{ trade.executed_at }}</td><td>{{ trade.get_side_display }}</td>
+                    <td>{{ trade.quantity }}</td><td>{{ trade.price }}</td></tr>
+            {% empty %}
+                <tr><td colspan="4">Сделок пока нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endwith %}
+{% empty %}
+    <p>Стратегий пока нет.</p>
+{% endfor %}
+{% endblock %}

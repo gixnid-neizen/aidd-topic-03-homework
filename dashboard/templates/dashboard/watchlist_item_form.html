@@ -1,0 +1,11 @@
+{% extends "dashboard/base.html" %}
+{% block title %}<title>Добавить акцию в список</title>{% endblock %}
+{% block content %}
+<h1>Добавить акцию: {{ watchlist.name }}</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Сохранить</button>
+    <a class="btn btn-secondary" href="{% url 'dashboard:watchlists' %}">Отмена</a>
+</form>
+{% endblock %}

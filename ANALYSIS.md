@@ -1,6 +1,6 @@
 # Анализ приложения Investing Demo
 
-Этот раздел фиксирует анализ исходного состояния проекта для задания 1. Все выводы сопровождаются ссылками на исходные файлы и строки. Последующие задания добавляются в отдельные разделы ниже и не заменяют этот анализ.
+Разделы 1–8 фиксируют исходное состояние проекта на [`commit 362510b`](https://github.com/gixnid-neizen/aidd-topic-03-homework/tree/362510b); ссылки на файлы и строки относятся к этому снимку, даже если исходники модернизированы в последующих коммитах. Результаты следующих заданий добавляются после них и не заменяют исходный анализ.
 
 ## 1. Назначение приложения и технологический стек
 
@@ -195,4 +195,31 @@ Investing Demo — веб-приложение-каталог акций: пол
 7. В `update_last_price()` время котировки распаковывается, но не сохраняется; trend calculation использует широкую обработку исключений, а price/trend пишутся через queryset `update()`: [`dashboard/tasks.py`](./dashboard/tasks.py#L11-L28).
 8. API ViewSet предоставляет действия записи и не задаёт permission class: [`dashboard/api/v1/views.py`](./dashboard/api/v1/views.py#L16-L22).
 9. В расписании Celery задача с названием `add-every-5-min` фактически настроена на интервал 10 секунд: [`config/celery.py`](./config/celery.py#L13-L18).
-10. В модели нет персональных списков наблюдения, виртуальных портфелей или истории цен; исходная прикладная модель только `Share`: [`dashboard/models.py`](./dashboard/models.py#L4-L21).
+10. В исходной модели нет персональных списков наблюдения, виртуальных портфелей или истории цен; исходная прикладная модель только `Share`: [`dashboard/models.py`](./dashboard/models.py#L4-L21).
+
+## 9. Задание 4 — новая функциональность
+
+Функции этого раздела добавлены после анализа исходной версии; они не заменяют описание исходной модели и требования разделов 1–8.
+
+### Новые модели и связи
+
+Добавлены модели `Watchlist` и `WatchlistItem` (пользовательский список, акция, ценовой порог и направление), `PriceAlertNotification` (событие уведомления), `Portfolio` и `PortfolioTrade` (портфель и журнал покупок/продаж), `PriceHistory` (исторические цены), `InvestmentStrategy` и `StrategyTrade` (параметры стратегии и журнал симуляции). Владелец списка, портфеля и стратегии — Django user; позиции связывают сущности с `Share`. Денежные поля хранятся как Decimal, ограничения базы данных запрещают неположительные цены/количества и дублирующие записи: [`dashboard/models.py`](./dashboard/models.py#L30-L228), [`dashboard/migrations/0008_investmentstrategy_portfolio_watchlist_watchlistitem_and_more.py`](./dashboard/migrations/0008_investmentstrategy_portfolio_watchlist_watchlistitem_and_more.py#L1-L178).
+
+### Требования и подтверждения реализации
+
+1. **Персональные списки.** Авторизованный пользователь создаёт свои списки наблюдения, добавляет/удаляет акции; доступ к чужим спискам запрещён. Подтверждение: [`dashboard/views.py`](./dashboard/views.py#L91-L142), [`dashboard/models.py`](./dashboard/models.py#L30-L81), [`dashboard/templates/dashboard/watchlists.html`](./dashboard/templates/dashboard/watchlists.html#L1-L40).
+2. **Целевые цены и уведомления.** Для акции задаётся положительная цель и условие выше/ниже; уведомление создаётся один раз за непрерывный период выполнения условия и может сработать повторно после выхода цены из него. Подтверждение: [`dashboard/services/investments.py`](./dashboard/services/investments.py#L38-L64), [`dashboard/models.py`](./dashboard/models.py#L49-L92), [`dashboard/views.py`](./dashboard/views.py#L144-L152).
+3. **Виртуальный портфель и история сделок.** Пользователь записывает покупки/продажи с количеством и ценой; продажа сверх текущей позиции отклоняется. Подтверждение: [`dashboard/services/investments.py`](./dashboard/services/investments.py#L101-L139), [`dashboard/views.py`](./dashboard/views.py#L154-L202), [`dashboard/models.py`](./dashboard/models.py#L95-L139).
+4. **Расчёты портфеля.** Система отображает количество, среднюю себестоимость, оценку по последней цене, реализованный и нереализованный P/L. Подтверждение: [`dashboard/services/investments.py`](./dashboard/services/investments.py#L142-L203), [`dashboard/templates/dashboard/portfolio_detail.html`](./dashboard/templates/dashboard/portfolio_detail.html#L1-L46).
+5. **Сохранение истории цен.** Успешная рыночная котировка сохраняется по акции и timestamp; повторный timestamp обновляет существующую точку. Подтверждение: [`dashboard/services/investments.py`](./dashboard/services/investments.py#L21-L35), [`dashboard/tasks.py`](./dashboard/tasks.py#L7-L24), [`dashboard/models.py`](./dashboard/models.py#L141-L158).
+6. **Просмотр и анализ истории.** Пользователь выбирает период 7/30/90/180/365 дней и видит таблицу, график, абсолютное и процентное изменение цены. Подтверждение: [`dashboard/views.py`](./dashboard/views.py#L205-L234), [`dashboard/services/investments.py`](./dashboard/services/investments.py#L207-L230), [`dashboard/templates/dashboard/price_history.html`](./dashboard/templates/dashboard/price_history.html#L1-L35).
+7. **Настройка и запуск стратегии.** Пользователь задаёт акцию, количество, условие покупки и/или продажи; активная стратегия при выполнении условий записывает симулированные сделки, не дублируя одну и ту же позицию на повторных проверках. Подтверждение: [`dashboard/models.py`](./dashboard/models.py#L161-L225), [`dashboard/services/investments.py`](./dashboard/services/investments.py#L67-L98), [`dashboard/tasks.py`](./dashboard/tasks.py#L19-L24).
+8. **История и эффективность стратегии.** Владелец видит виртуальные сделки, позицию и P/L и может приостанавливать/возобновлять стратегию. Подтверждение: [`dashboard/services/investments.py`](./dashboard/services/investments.py#L233-L265), [`dashboard/views.py`](./dashboard/views.py#L235-L270), [`dashboard/templates/dashboard/strategies.html`](./dashboard/templates/dashboard/strategies.html#L1-L47).
+
+Автоматическая часть функций 2, 5 и 7 зависит от доступного Tinkoff SDK, `TINKOFF_TOKEN`, Redis и запущенных Celery Beat/Worker; без внешнего источника приложение не генерирует поддельные рыночные цены: [`dashboard/services/market_data.py`](./dashboard/services/market_data.py#L1-L20), [`config/celery.py`](./config/celery.py#L13-L18).
+
+## 10. Изменения и проверка
+
+- Исправлены конфигурация запуска, URL пользовательского приложения, формы регистрации/входа и fallback-поведение рыночных сервисов: [`config/settings.py`](./config/settings.py#L1-L149), [`config/urls.py`](./config/urls.py#L4-L8), [`user/forms.py`](./user/forms.py#L1-L70), [`user/views.py`](./user/views.py#L1-L66), [`dashboard/services/graph.py`](./dashboard/services/graph.py#L1-L48), [`dashboard/services/market_data.py`](./dashboard/services/market_data.py#L1-L20).
+- Для задания 4 добавлены модели, миграция, сервисы, страницы и тесты; инструкцию запуска обновлено в [`README.md`](./README.md#L1-L47).
+- Проверки в текущем окружении: `manage.py check`, `makemigrations --check --dry-run`, полный `manage.py test` (23 теста) и HTTP-проверки основных маршрутов.
